@@ -596,42 +596,6 @@
       transition: opacity 0.15s;
     }
     .funzone-btn:hover { opacity: 0.85; }
-
-    /* ── PORTION PREVIEW BUTTON ── */
-    .portion-preview-btn {
-      display: inline-flex; align-items: center; gap: 7px;
-      background: rgba(20,12,4,0.82);
-      color: var(--gold-pale);
-      border: 1px solid rgba(196,160,48,0.45);
-      padding: 9px 18px;
-      font-family: 'Cinzel', serif; font-size: 11px; font-weight: 600;
-      letter-spacing: 1.5px; cursor: pointer; white-space: nowrap;
-      min-height: 44px; transition: background 0.18s, border-color 0.18s, color 0.18s;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.4);
-    }
-    .portion-preview-btn:hover,
-    .portion-preview-btn.active {
-      background: var(--gold);
-      border-color: var(--gold-lt);
-      color: var(--ink);
-    }
-    .portion-preview-btn svg { width: 13px; height: 13px; flex-shrink: 0; }
-
-    /* Portion size label that appears below buttons */
-    .portion-size-label {
-      position: absolute; bottom: 68px; left: 50%;
-      transform: translateX(-50%);
-      background: rgba(20,12,4,0.9);
-      border: 1px solid rgba(196,160,48,0.35);
-      padding: 5px 16px;
-      font-family: 'Noto Sans JP', sans-serif;
-      font-size: 11px; letter-spacing: 1.5px;
-      color: var(--gold-pale);
-      white-space: nowrap; z-index: 7;
-      opacity: 0; transition: opacity 0.3s;
-      pointer-events: none;
-    }
-    .portion-size-label.visible { opacity: 1; }
   </style>
 </head>
 <body>
@@ -720,16 +684,16 @@ const DISH_IMAGES = {
 };
 
 const LOCAL_ASSETS = {
-  'agedashi tofu':    { folder: 'Agedashi-Tofu',    file: 'Agedashi-Tofu',    scale: 0.15, portionDiameterM: 0.16, portionLabel: '~16cm bowl' },
-  'edamame':          { folder: 'Edamame',           file: 'Edamame',          scale: 0.06, portionDiameterM: 0.18, portionLabel: '~18cm plate' },
-  'gyoza':            { folder: 'Gyoza',             file: 'Gyoza',            scale: 0.3,  portionDiameterM: 0.22, portionLabel: '~22cm plate, 6 pcs' },
-  'karaage':          { folder: 'Karaage',           file: 'Karaage',          scale: 0.15, portionDiameterM: 0.20, portionLabel: '~20cm plate' },
-  'matcha ice cream': { folder: 'Matcha-Ice-Cream',  file: 'Matcha-Ice-Cream', scale: 0.3,  portionDiameterM: 0.10, portionLabel: '~10cm cup' },
-  'miso soup':        { folder: 'Miso-Soup',         file: 'Miso-Soup',        scale: 0.3,  portionDiameterM: 0.12, portionLabel: '~12cm bowl' },
-  'ramen':            { folder: 'Ramen',             file: 'Ramen',            scale: 0.2,  portionDiameterM: 0.22, portionLabel: '~22cm bowl' },
-  'salmon sashimi':   { folder: 'Salmon-Sashimi',    file: 'Salmon-Sashimi',   scale: 0.3,  portionDiameterM: 0.24, portionLabel: '~24cm plate' },
-  'takoyaki':         { folder: 'Takoyaki',          file: 'Takoyaki',         scale: 0.5,  portionDiameterM: 0.20, portionLabel: '~20cm plate, 6 pcs' },
-  'tempura':          { folder: 'Tempura',           file: 'Tempura',          scale: 0.3,  portionDiameterM: 0.26, portionLabel: '~26cm plate' },
+  'agedashi tofu':    { folder: 'Agedashi-Tofu',    file: 'Agedashi-Tofu',    scale: 0.15 },
+  'edamame':          { folder: 'Edamame',           file: 'Edamame',          scale: 0.06 },
+  'gyoza':            { folder: 'Gyoza',             file: 'Gyoza',            scale: 0.3  },
+  'karaage':          { folder: 'Karaage',           file: 'Karaage',          scale: 0.15 },
+  'matcha ice cream': { folder: 'Matcha-Ice-Cream',  file: 'Matcha-Ice-Cream', scale: 0.3  },
+  'miso soup':        { folder: 'Miso-Soup',         file: 'Miso-Soup',        scale: 0.3  },
+  'ramen':            { folder: 'Ramen',             file: 'Ramen',            scale: 0.2  },
+  'salmon sashimi':   { folder: 'Salmon-Sashimi',    file: 'Salmon-Sashimi',   scale: 0.3  },
+  'takoyaki':         { folder: 'Takoyaki',          file: 'Takoyaki',         scale: 0.5  },
+  'tempura':          { folder: 'Tempura',           file: 'Tempura',          scale: 0.3  },
 };
 const ASSETS_BASE = '3d-model';
 
@@ -739,12 +703,10 @@ function getLocalAssets(dishName) {
   if (!entry) return { posterPath: DISH_IMAGES[key] || '', glbPath: '' };
   const base = `${ASSETS_BASE}/${entry.folder}/${entry.file}`;
   return {
-    posterPath:        DISH_IMAGES[key] || `${base}.png`,
-    glbPath:           `${base}.glb`,
-    usdzPath:          `${base}.usdz`,
-    scale:             entry.scale,
-    portionDiameterM:  entry.portionDiameterM ?? 0.20,
-    portionLabel:      entry.portionLabel      ?? '~20cm plate',
+    posterPath: DISH_IMAGES[key] || `${base}.png`,
+    glbPath:    `${base}.glb`,
+    usdzPath:   `${base}.usdz`,
+    scale:      entry.scale,
   };
 }
 
@@ -825,12 +787,10 @@ function rowToDish(row) {
     dotd:      truthy(row['dish of the day'] || row['dotd']),
     isNew:     truthy(row['new']),
     available: truthy(row['available']),
-    glbPath:           local.glbPath,
-    usdzPath:          local.usdzPath,
-    posterPath:        local.posterPath,
-    scale:             local.scale,
-    portionDiameterM:  local.portionDiameterM,
-    portionLabel:      local.portionLabel,
+    glbPath:   local.glbPath,
+    usdzPath:  local.usdzPath,
+    posterPath: local.posterPath,
+    scale:     local.scale,
     emoji:     EMOJI_MAP[(row['name']||'').toLowerCase()] || '🍽️',
   };
 }
@@ -947,31 +907,18 @@ function openModal(id) {
   if (d.glbPath) {
     const arBtnWrap = document.createElement('div');
     arBtnWrap.className = 'mv-ar-btn-wrap';
-    arBtnWrap.style.cssText = `position:absolute;bottom:16px;left:50%;transform:translateX(-50%);z-index:6;display:flex;gap:8px;align-items:center;`;
-
-    // Portion size label (hidden until Portion Preview is active)
-    const portionLabel = document.createElement('div');
-    portionLabel.className = 'portion-size-label';
-    portionLabel.id = 'portion-size-label';
-    portionLabel.innerHTML = `🍽 ${d.portionLabel || '~20cm plate'}`;
-    vw.appendChild(portionLabel);
-
+    arBtnWrap.style.cssText = `position:absolute;bottom:16px;left:50%;transform:translateX(-50%);z-index:6;display:flex;gap:10px;align-items:center;`;
     arBtnWrap.innerHTML = `
       <button class="modal-ar-launch-btn" style="
         display:inline-flex;align-items:center;gap:8px;
         background:var(--crimson);color:var(--washi);
-        border:none;padding:11px 20px;
+        border:none;padding:11px 24px;
         font-family:'Cinzel',serif;font-size:12px;font-weight:600;
         letter-spacing:2px;cursor:pointer;white-space:nowrap;min-height:44px;
         box-shadow:0 4px 18px rgba(139,26,26,0.45);">
         ✦ View On Table
-      </button>
-      <button class="portion-preview-btn" id="portion-preview-btn" style="display:none;" title="See actual portion size">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/><line x1="2" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22" y2="12"/></svg>
-        Portion Preview
       </button>`;
     vw.insertBefore(arBtnWrap, arBadge);
-
     arBtnWrap.querySelector('.modal-ar-launch-btn').addEventListener('click', () => {
       loadModelAndAR(d, vw, arBadge, scaleInfo, arBtnWrap, photoWrap);
     });
@@ -1017,6 +964,7 @@ function loadModelAndAR(d, vw, arBadge, scaleInfo, arBtnWrap, photoWrap) {
   vw.insertBefore(mv, arBadge);
 
   mv.addEventListener('load', () => {
+    // Log natural dimensions so you can calibrate LOCAL_ASSETS scale values
     if (mv.getDimensions) {
       const dim = mv.getDimensions();
       console.log(`[AR] ${d.name} natural dims:`, dim, `| applied scale: ${s}`);
@@ -1031,51 +979,6 @@ function loadModelAndAR(d, vw, arBadge, scaleInfo, arBtnWrap, photoWrap) {
     arBtnWrap.style.display = 'flex';
     btn.disabled = false;
     btn.innerHTML = '✦ Launch AR';
-
-    // Show the Portion Preview button now that model is loaded
-    const portionBtn = document.getElementById('portion-preview-btn');
-    const portionLabelEl = document.getElementById('portion-size-label');
-    if (portionBtn) {
-      portionBtn.style.display = 'inline-flex';
-      let portionActive = false;
-
-      // Calculate the orbit distance needed so the model appears at real-world size on screen
-      // We use the viewport height and vertical FOV to back-calculate the distance
-      function getPortionOrbitDistance() {
-        const diamM = d.portionDiameterM || 0.20;
-        const viewerH = vw.offsetHeight || 300;
-        const viewerW = vw.offsetWidth  || 400;
-        const viewportSize = Math.min(viewerH, viewerW); // use shorter axis
-
-        // Approximate screen pixels per meter at 1m distance using default ~45deg FOV
-        // distance = (realSizeM * viewportPx) / (2 * viewportPx * tan(fov/2))
-        // Simplified: target the model to fill ~55% of the viewport
-        const targetFraction = 0.55;
-        const fovRad = (45 * Math.PI) / 180;
-        const distance = (diamM / (2 * targetFraction)) / Math.tan(fovRad / 2);
-        return Math.max(0.15, Math.min(distance, 1.2)).toFixed(3) + 'm';
-      }
-
-      portionBtn.addEventListener('click', () => {
-        portionActive = !portionActive;
-        portionBtn.classList.toggle('active', portionActive);
-
-        if (portionActive) {
-          // Snap to portion-calibrated orbit distance
-          const dist = getPortionOrbitDistance();
-          mv.setAttribute('camera-orbit', `0deg 75deg ${dist}`);
-          mv.setAttribute('min-camera-orbit', `auto 10deg 0.08m`);
-          mv.setAttribute('max-camera-orbit', `auto 90deg 10m`);
-          if (portionLabelEl) portionLabelEl.classList.add('visible');
-          portionBtn.title = 'Exit portion preview';
-        } else {
-          // Restore free explore mode
-          mv.setAttribute('camera-orbit', '0deg 75deg auto');
-          if (portionLabelEl) portionLabelEl.classList.remove('visible');
-          portionBtn.title = 'See actual portion size';
-        }
-      });
-    }
 
     // Auto-launch AR immediately
     mv.activateAR();
@@ -1100,7 +1003,7 @@ function closeModal() {
   if (mvEl && typeof mvEl.pause === 'function') mvEl.pause();
   document.getElementById('modal-overlay').classList.remove('open');
   document.body.style.overflow = '';
-  document.querySelectorAll('#modal-viewer-wrap .modal-photo, #modal-viewer-wrap model-viewer, #modal-viewer-wrap .mv-loading-overlay, #modal-viewer-wrap .mv-ar-btn-wrap, #modal-viewer-wrap .portion-size-label')
+  document.querySelectorAll('#modal-viewer-wrap .modal-photo, #modal-viewer-wrap model-viewer, #modal-viewer-wrap .mv-loading-overlay, #modal-viewer-wrap .mv-ar-btn-wrap')
     .forEach(el => el.remove());
   document.getElementById('mv-ar-badge').classList.remove('visible');
 }
