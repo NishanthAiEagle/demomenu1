@@ -596,42 +596,6 @@
       transition: opacity 0.15s;
     }
     .funzone-btn:hover { opacity: 0.85; }
-
-    /* ── PORTION PREVIEW BUTTON ── */
-    .portion-preview-btn {
-      display: inline-flex; align-items: center; gap: 7px;
-      background: rgba(20,12,4,0.82);
-      color: var(--gold-pale);
-      border: 1px solid rgba(196,160,48,0.45);
-      padding: 9px 18px;
-      font-family: 'Cinzel', serif; font-size: 11px; font-weight: 600;
-      letter-spacing: 1.5px; cursor: pointer; white-space: nowrap;
-      min-height: 44px; transition: background 0.18s, border-color 0.18s, color 0.18s;
-      box-shadow: 0 2px 12px rgba(0,0,0,0.4);
-    }
-    .portion-preview-btn:hover,
-    .portion-preview-btn.active {
-      background: var(--gold);
-      border-color: var(--gold-lt);
-      color: var(--ink);
-    }
-    .portion-preview-btn svg { width: 13px; height: 13px; flex-shrink: 0; }
-
-    /* Portion size label that appears below buttons */
-    .portion-size-label {
-      position: absolute; bottom: 68px; left: 50%;
-      transform: translateX(-50%);
-      background: rgba(20,12,4,0.9);
-      border: 1px solid rgba(196,160,48,0.35);
-      padding: 5px 16px;
-      font-family: 'Noto Sans JP', sans-serif;
-      font-size: 11px; letter-spacing: 1.5px;
-      color: var(--gold-pale);
-      white-space: nowrap; z-index: 7;
-      opacity: 0; transition: opacity 0.3s;
-      pointer-events: none;
-    }
-    .portion-size-label.visible { opacity: 1; }
   </style>
 </head>
 <body>
@@ -949,26 +913,15 @@ function openModal(id) {
     arBtnWrap.className = 'mv-ar-btn-wrap';
     arBtnWrap.style.cssText = `position:absolute;bottom:16px;left:50%;transform:translateX(-50%);z-index:6;display:flex;gap:8px;align-items:center;`;
 
-    // Portion size label (hidden until Portion Preview is active)
-    const portionLabel = document.createElement('div');
-    portionLabel.className = 'portion-size-label';
-    portionLabel.id = 'portion-size-label';
-    portionLabel.innerHTML = `🍽 ${d.portionLabel || '~20cm plate'}`;
-    vw.appendChild(portionLabel);
-
     arBtnWrap.innerHTML = `
       <button class="modal-ar-launch-btn" style="
         display:inline-flex;align-items:center;gap:8px;
         background:var(--crimson);color:var(--washi);
-        border:none;padding:11px 20px;
+        border:none;padding:11px 24px;
         font-family:'Cinzel',serif;font-size:12px;font-weight:600;
         letter-spacing:2px;cursor:pointer;white-space:nowrap;min-height:44px;
         box-shadow:0 4px 18px rgba(139,26,26,0.45);">
         ✦ View On Table
-      </button>
-      <button class="portion-preview-btn" id="portion-preview-btn" style="display:none;" title="See actual portion size">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/><line x1="2" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22" y2="12"/></svg>
-        Portion Preview
       </button>`;
     vw.insertBefore(arBtnWrap, arBadge);
 
@@ -990,14 +943,12 @@ function loadModelAndAR(d, vw, arBadge, scaleInfo, arBtnWrap, photoWrap) {
   mv.setAttribute('src', d.glbPath);
   if (isIOS && d.usdzPath) mv.setAttribute('ios-src', d.usdzPath);
 
-  // Scale: applied in 3D preview only. AR uses ar-scale="auto" so Scene Viewer
-  // / WebXR auto-fits the model to real-world size from GLTF units — fastest & most accurate.
   const s = (d.scale ?? 1).toFixed(6);
   mv.setAttribute('scale',             `${s} ${s} ${s}`);
   mv.setAttribute('ar',               '');
   mv.setAttribute('ar-modes',         'webxr scene-viewer quick-look');
   mv.setAttribute('ar-placement',     'floor');
-  mv.setAttribute('ar-scale',         'auto');          // auto-fit to environment
+  mv.setAttribute('ar-scale',         'fixed');
   mv.setAttribute('camera-controls',  '');
   mv.setAttribute('camera-orbit',     '0deg 75deg auto');
   mv.setAttribute('min-camera-orbit', 'auto 10deg 0.1m');
@@ -1010,86 +961,126 @@ function loadModelAndAR(d, vw, arBadge, scaleInfo, arBtnWrap, photoWrap) {
   mv.setAttribute('interaction-prompt','none');
   mv.setAttribute('loading',          'eager');
   mv.setAttribute('reveal',           'auto');
-  mv.setAttribute('touch-action',     'pan-y');          // allow pinch-zoom on model
+  mv.setAttribute('touch-action',     'pan-y');
   mv.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;background:transparent;touch-action:pan-y pinch-zoom;z-index:-1;opacity:0;pointer-events:none;';
 
-  // Insert into DOM AFTER all attributes are set (Scene Viewer reads scale from launch URL)
+  // ── PORTION PREVIEW HOTSPOT (renders as a button INSIDE the AR session) ──
+  // model-viewer renders slot="hotspot-*" children as overlays in WebXR AR.
+  // We position it at the bottom-centre of the model using data-surface.
+  const portionHotspot = document.createElement('button');
+  portionHotspot.slot             = 'hotspot-portion';
+  portionHotspot.dataset.position = '0 0 0';   // world-centre of model
+  portionHotspot.dataset.normal   = '0 1 0';   // faces upward
+  portionHotspot.className        = 'ar-hotspot-portion';
+  portionHotspot.textContent      = '🍽 Portion Preview';
+
+  // Hotspot style — injected once
+  if (!document.getElementById('ar-hotspot-style')) {
+    const st = document.createElement('style');
+    st.id = 'ar-hotspot-style';
+    st.textContent = `
+      .ar-hotspot-portion {
+        display: inline-flex; align-items: center; gap: 6px;
+        background: rgba(10,6,2,0.85);
+        color: #e8d080;
+        border: 1.5px solid rgba(196,160,48,0.6);
+        border-radius: 30px;
+        padding: 10px 22px;
+        font-family: 'Cinzel', serif;
+        font-size: 13px; font-weight: 600;
+        letter-spacing: 1.5px;
+        cursor: pointer;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.55);
+        white-space: nowrap;
+        transition: background 0.2s, color 0.2s, border-color 0.2s, transform 0.15s;
+        -webkit-tap-highlight-color: transparent;
+        min-height: 48px;
+      }
+      .ar-hotspot-portion:active  { transform: scale(0.95); }
+      .ar-hotspot-portion.snapped {
+        background: rgba(154,120,32,0.92);
+        color: #1c1108;
+        border-color: #c4a030;
+      }
+      /* Hide the default hotspot dot */
+      .ar-hotspot-portion::before { display: none !important; }
+    `;
+    document.head.appendChild(st);
+  }
+  mv.appendChild(portionHotspot);
+
+  // Insert model-viewer into DOM after all attributes + children are set
   vw.insertBefore(mv, arBadge);
 
-  mv.addEventListener('load', () => {
-    if (mv.getDimensions) {
-      const dim = mv.getDimensions();
-      console.log(`[AR] ${d.name} natural dims:`, dim, `| applied scale: ${s}`);
-    }
+  // ── Portion scale logic ──
+  // Compute what uniform scale makes the model's longest axis == portionDiameterM
+  // We read getDimensions() (natural size in metres at scale=1) after load.
+  let portionScaleStr = null;   // computed on load
+  let isPortionActive = false;
+  let originalScale   = `${s} ${s} ${s}`;
 
-    // Show the 3D model in the viewer panel (interactive with pinch-zoom)
+  mv.addEventListener('load', () => {
+    // Compute natural dimensions to calibrate portion scale
+    let portionScale = parseFloat(s); // fallback
+    if (mv.getDimensions) {
+      const dim = mv.getDimensions();  // { x, y, z } in metres at current scale
+      console.log(`[AR] ${d.name} dims at scale ${s}:`, dim);
+      // Longest axis of the model at current scale
+      const longestAtCurrentScale = Math.max(dim.x, dim.y, dim.z);
+      if (longestAtCurrentScale > 0) {
+        const targetM = d.portionDiameterM || 0.20;
+        // New scale = currentScale * (target / longestAtCurrentScale)
+        portionScale = parseFloat(s) * (targetM / longestAtCurrentScale);
+        portionScale = Math.max(0.001, portionScale);
+      }
+    }
+    portionScaleStr = portionScale.toFixed(6);
+    console.log(`[AR] ${d.name} portion scale → ${portionScaleStr}  (${d.portionLabel})`);
+
+    // Wire up the hotspot button
+    portionHotspot.addEventListener('click', () => {
+      isPortionActive = !isPortionActive;
+      if (isPortionActive) {
+        // Snap to real portion size
+        mv.setAttribute('scale', `${portionScaleStr} ${portionScaleStr} ${portionScaleStr}`);
+        portionHotspot.classList.add('snapped');
+        portionHotspot.textContent = `✓ ${d.portionLabel}`;
+      } else {
+        // Restore original display scale
+        mv.setAttribute('scale', originalScale);
+        portionHotspot.classList.remove('snapped');
+        portionHotspot.textContent = '🍽 Portion Preview';
+      }
+    });
+
+    // Show model in the 3D preview panel
     photoWrap.style.display = 'none';
-    mv.style.zIndex = '2';
-    mv.style.opacity = '1';
-    mv.style.pointerEvents = 'auto';
+    mv.style.zIndex         = '2';
+    mv.style.opacity        = '1';
+    mv.style.pointerEvents  = 'auto';
     arBadge.classList.add('visible');
     arBtnWrap.style.display = 'flex';
-    btn.disabled = false;
-    btn.innerHTML = '✦ Launch AR';
+    btn.disabled            = false;
+    btn.innerHTML           = '✦ Launch AR';
 
-    // Show the Portion Preview button now that model is loaded
-    const portionBtn = document.getElementById('portion-preview-btn');
-    const portionLabelEl = document.getElementById('portion-size-label');
-    if (portionBtn) {
-      portionBtn.style.display = 'inline-flex';
-      let portionActive = false;
-
-      // Calculate the orbit distance needed so the model appears at real-world size on screen
-      // We use the viewport height and vertical FOV to back-calculate the distance
-      function getPortionOrbitDistance() {
-        const diamM = d.portionDiameterM || 0.20;
-        const viewerH = vw.offsetHeight || 300;
-        const viewerW = vw.offsetWidth  || 400;
-        const viewportSize = Math.min(viewerH, viewerW); // use shorter axis
-
-        // Approximate screen pixels per meter at 1m distance using default ~45deg FOV
-        // distance = (realSizeM * viewportPx) / (2 * viewportPx * tan(fov/2))
-        // Simplified: target the model to fill ~55% of the viewport
-        const targetFraction = 0.55;
-        const fovRad = (45 * Math.PI) / 180;
-        const distance = (diamM / (2 * targetFraction)) / Math.tan(fovRad / 2);
-        return Math.max(0.15, Math.min(distance, 1.2)).toFixed(3) + 'm';
-      }
-
-      portionBtn.addEventListener('click', () => {
-        portionActive = !portionActive;
-        portionBtn.classList.toggle('active', portionActive);
-
-        if (portionActive) {
-          // Snap to portion-calibrated orbit distance
-          const dist = getPortionOrbitDistance();
-          mv.setAttribute('camera-orbit', `0deg 75deg ${dist}`);
-          mv.setAttribute('min-camera-orbit', `auto 10deg 0.08m`);
-          mv.setAttribute('max-camera-orbit', `auto 90deg 10m`);
-          if (portionLabelEl) portionLabelEl.classList.add('visible');
-          portionBtn.title = 'Exit portion preview';
-        } else {
-          // Restore free explore mode
-          mv.setAttribute('camera-orbit', '0deg 75deg auto');
-          if (portionLabelEl) portionLabelEl.classList.remove('visible');
-          portionBtn.title = 'See actual portion size';
-        }
-      });
-    }
-
-    // Auto-launch AR immediately
+    // Auto-launch AR
     mv.activateAR();
 
     mv.addEventListener('ar-status', (e) => {
       if (e.detail.status === 'failed' || e.detail.status === 'not-presenting') {
-        btn.disabled = false;
+        btn.disabled  = false;
         btn.innerHTML = '✶ View in AR';
+        // Reset portion state when AR exits
+        isPortionActive = false;
+        portionHotspot.classList.remove('snapped');
+        portionHotspot.textContent = '🍽 Portion Preview';
+        mv.setAttribute('scale', originalScale);
       }
     }, { once: true });
   });
 
   mv.addEventListener('error', () => {
-    btn.disabled = false;
+    btn.disabled  = false;
     btn.innerHTML = '⚠ Retry';
     mv.remove();
   });
@@ -1100,7 +1091,7 @@ function closeModal() {
   if (mvEl && typeof mvEl.pause === 'function') mvEl.pause();
   document.getElementById('modal-overlay').classList.remove('open');
   document.body.style.overflow = '';
-  document.querySelectorAll('#modal-viewer-wrap .modal-photo, #modal-viewer-wrap model-viewer, #modal-viewer-wrap .mv-loading-overlay, #modal-viewer-wrap .mv-ar-btn-wrap, #modal-viewer-wrap .portion-size-label')
+  document.querySelectorAll('#modal-viewer-wrap .modal-photo, #modal-viewer-wrap model-viewer, #modal-viewer-wrap .mv-loading-overlay, #modal-viewer-wrap .mv-ar-btn-wrap')
     .forEach(el => el.remove());
   document.getElementById('mv-ar-badge').classList.remove('visible');
 }
