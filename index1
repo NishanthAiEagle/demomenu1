@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
   <title>Japanese Cuisine — AR Menu</title>
   <meta name="description" content="Interactive AR menu for Japanese Cuisine — authentic Japanese cuisine with 3D dish previews." />
 
@@ -473,7 +473,7 @@
       background: transparent;
       --progress-bar-color: #b8860b;
       --progress-mask: transparent;
-      touch-action: pan-y pinch-zoom;
+      touch-action: none;
     }
 
     .mv-ar-badge {
@@ -684,16 +684,16 @@ const DISH_IMAGES = {
 };
 
 const LOCAL_ASSETS = {
-  'agedashi tofu':    { folder: 'Agedashi-Tofu',    file: 'Agedashi-Tofu',    scale: 0.15 },
+  'agedashi tofu':    { folder: 'Agedashi-Tofu',     file: 'Agedashi-Tofu',    scale: 0.06 },
   'edamame':          { folder: 'Edamame',           file: 'Edamame',          scale: 0.06 },
-  'gyoza':            { folder: 'Gyoza',             file: 'Gyoza',            scale: 0.3  },
-  'karaage':          { folder: 'Karaage',           file: 'Karaage',          scale: 0.15 },
-  'matcha ice cream': { folder: 'Matcha-Ice-Cream',  file: 'Matcha-Ice-Cream', scale: 0.3  },
-  'miso soup':        { folder: 'Miso-Soup',         file: 'Miso-Soup',        scale: 0.3  },
-  'ramen':            { folder: 'Ramen',             file: 'Ramen',            scale: 0.2  },
-  'salmon sashimi':   { folder: 'Salmon-Sashimi',    file: 'Salmon-Sashimi',   scale: 0.3  },
-  'takoyaki':         { folder: 'Takoyaki',          file: 'Takoyaki',         scale: 0.5  },
-  'tempura':          { folder: 'Tempura',           file: 'Tempura',          scale: 0.3  },
+  'gyoza':            { folder: 'Gyoza',             file: 'Gyoza',            scale: 0.06 },
+  'karaage':          { folder: 'Karaage',           file: 'Karaage',          scale: 0.06 },
+  'matcha ice cream': { folder: 'Matcha-Ice-Cream',  file: 'Matcha-Ice-Cream', scale: 0.06 },
+  'miso soup':        { folder: 'Miso-Soup',         file: 'Miso-Soup',        scale: 0.06 },
+  'ramen':            { folder: 'Ramen',             file: 'Ramen',            scale: 0.06 },
+  'salmon sashimi':   { folder: 'Salmon-Sashimi',    file: 'Salmon-Sashimi',   scale: 0.06 },
+  'takoyaki':         { folder: 'Takoyaki',          file: 'Takoyaki',         scale: 0.06 },
+  'tempura':          { folder: 'Tempura',           file: 'Tempura',          scale: 0.06 },
 };
 const ASSETS_BASE = '3d-model';
 
@@ -937,28 +937,28 @@ function loadModelAndAR(d, vw, arBadge, scaleInfo, arBtnWrap, photoWrap) {
   mv.setAttribute('src', d.glbPath);
   if (isIOS && d.usdzPath) mv.setAttribute('ios-src', d.usdzPath);
 
-  // Scale: applied in 3D preview only. AR uses ar-scale="auto" so Scene Viewer
-  // / WebXR auto-fits the model to real-world size from GLTF units — fastest & most accurate.
+  // Scale must be set BEFORE the element is inserted so Scene Viewer
+  // picks it up in the launch intent URL. ar-scale="fixed" locks it in AR.
+  // The value in LOCAL_ASSETS is a direct uniform multiplier on the GLB's
+  // native size — tweak it until the dish looks right on your table.
   const s = (d.scale ?? 1).toFixed(6);
   mv.setAttribute('scale',             `${s} ${s} ${s}`);
   mv.setAttribute('ar',               '');
   mv.setAttribute('ar-modes',         'webxr scene-viewer quick-look');
   mv.setAttribute('ar-placement',     'floor');
-  mv.setAttribute('ar-scale',         'auto');          // auto-fit to environment
+  mv.setAttribute('ar-scale',         'fixed');
   mv.setAttribute('camera-controls',  '');
-  mv.setAttribute('camera-orbit',     '0deg 75deg auto');
-  mv.setAttribute('min-camera-orbit', 'auto 10deg 0.1m');
-  mv.setAttribute('max-camera-orbit', 'auto 90deg 10m');
-  mv.setAttribute('field-of-view',    'auto');
+  mv.setAttribute('camera-orbit',     '0deg 70deg 1.5m');
+  mv.setAttribute('min-camera-orbit', 'auto 10deg 0.3m');
+  mv.setAttribute('max-camera-orbit', 'auto 90deg 3m');
+  //mv.setAttribute('disable-zoom',     '');
   mv.setAttribute('shadow-intensity', '1');
-  mv.setAttribute('shadow-softness',  '0.8');
   mv.setAttribute('environment-image','neutral');
   mv.setAttribute('exposure',         '1.1');
   mv.setAttribute('interaction-prompt','none');
   mv.setAttribute('loading',          'eager');
   mv.setAttribute('reveal',           'auto');
-  mv.setAttribute('touch-action',     'pan-y');          // allow pinch-zoom on model
-  mv.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;background:transparent;touch-action:pan-y pinch-zoom;z-index:-1;opacity:0;pointer-events:none;';
+  mv.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;background:transparent;touch-action:none;z-index:-1;opacity:0;pointer-events:none;';
 
   // Insert into DOM AFTER all attributes are set (Scene Viewer reads scale from launch URL)
   vw.insertBefore(mv, arBadge);
@@ -969,24 +969,12 @@ function loadModelAndAR(d, vw, arBadge, scaleInfo, arBtnWrap, photoWrap) {
       const dim = mv.getDimensions();
       console.log(`[AR] ${d.name} natural dims:`, dim, `| applied scale: ${s}`);
     }
-
-    // Show the 3D model in the viewer panel (interactive with pinch-zoom)
-    photoWrap.style.display = 'none';
-    mv.style.zIndex = '2';
-    mv.style.opacity = '1';
-    mv.style.pointerEvents = 'auto';
-    arBadge.classList.add('visible');
-    arBtnWrap.style.display = 'flex';
-    btn.disabled = false;
-    btn.innerHTML = '✦ Launch AR';
-
-    // Auto-launch AR immediately
     mv.activateAR();
-
     mv.addEventListener('ar-status', (e) => {
       if (e.detail.status === 'failed' || e.detail.status === 'not-presenting') {
         btn.disabled = false;
         btn.innerHTML = '✶ View in AR';
+        mv.remove();
       }
     }, { once: true });
   });
