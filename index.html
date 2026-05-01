@@ -939,6 +939,66 @@ function loadModelAndAR(d, vw, arBadge, scaleInfo, arBtnWrap, photoWrap) {
   btn.disabled = true;
   btn.innerHTML = `<span style="display:inline-block;width:14px;height:14px;border:2px solid rgba(245,237,224,0.3);border-top-color:var(--washi);border-radius:50%;animation:spin 0.8s linear infinite;"></span> 読込中…`;
 
+  // ── Inject Portion Preview styles once ──
+  if (!document.getElementById('portion-overlay-style')) {
+    const st = document.createElement('style');
+    st.id = 'portion-overlay-style';
+    st.textContent = `
+      /* Portion Preview button — top-right overlay on 3D/AR viewer */
+      .pp-btn {
+        position: absolute;
+        top: 14px; right: 14px;
+        z-index: 20;
+        display: inline-flex; align-items: center; gap: 7px;
+        background: rgba(10,6,2,0.82);
+        color: #e8d080;
+        border: 1.5px solid rgba(196,160,48,0.55);
+        border-radius: 4px;
+        padding: 9px 16px;
+        font-family: 'Cinzel', serif;
+        font-size: 11px; font-weight: 600;
+        letter-spacing: 1.5px;
+        cursor: pointer;
+        box-shadow: 0 4px 18px rgba(0,0,0,0.5);
+        white-space: nowrap;
+        transition: background 0.2s, color 0.2s, border-color 0.2s;
+        -webkit-tap-highlight-color: transparent;
+        min-height: 44px;
+        pointer-events: auto;
+      }
+      .pp-btn:active { transform: scale(0.96); }
+      .pp-btn.pp-active {
+        background: rgba(154,120,32,0.92);
+        color: #1c1108;
+        border-color: #c4a030;
+      }
+      /* Portion info pill shown when active */
+      .pp-info {
+        position: absolute;
+        top: 66px; right: 14px;
+        z-index: 20;
+        background: rgba(10,6,2,0.88);
+        border: 1px solid rgba(196,160,48,0.35);
+        border-radius: 4px;
+        padding: 6px 14px;
+        font-family: 'Noto Sans JP', sans-serif;
+        font-size: 11px; letter-spacing: 1px;
+        color: #e8d080;
+        white-space: nowrap;
+        pointer-events: none;
+        opacity: 0;
+        transform: translateY(-4px);
+        transition: opacity 0.25s, transform 0.25s;
+      }
+      .pp-info.pp-info-visible {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    `;
+    document.head.appendChild(st);
+  }
+
+  // ── Build model-viewer ──
   const mv = document.createElement('model-viewer');
   mv.setAttribute('src', d.glbPath);
   if (isIOS && d.usdzPath) mv.setAttribute('ios-src', d.usdzPath);
@@ -951,8 +1011,8 @@ function loadModelAndAR(d, vw, arBadge, scaleInfo, arBtnWrap, photoWrap) {
   mv.setAttribute('ar-scale',         'fixed');
   mv.setAttribute('camera-controls',  '');
   mv.setAttribute('camera-orbit',     '0deg 75deg auto');
-  mv.setAttribute('min-camera-orbit', 'auto 10deg 0.1m');
-  mv.setAttribute('max-camera-orbit', 'auto 90deg 10m');
+  mv.setAttribute('min-camera-orbit', 'auto 10deg 0.05m');
+  mv.setAttribute('max-camera-orbit', 'auto 90deg 12m');
   mv.setAttribute('field-of-view',    'auto');
   mv.setAttribute('shadow-intensity', '1');
   mv.setAttribute('shadow-softness',  '0.8');
@@ -961,99 +1021,45 @@ function loadModelAndAR(d, vw, arBadge, scaleInfo, arBtnWrap, photoWrap) {
   mv.setAttribute('interaction-prompt','none');
   mv.setAttribute('loading',          'eager');
   mv.setAttribute('reveal',           'auto');
-  mv.setAttribute('touch-action',     'pan-y');
   mv.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;background:transparent;touch-action:pan-y pinch-zoom;z-index:-1;opacity:0;pointer-events:none;';
 
-  // ── PORTION PREVIEW HOTSPOT (renders as a button INSIDE the AR session) ──
-  // model-viewer renders slot="hotspot-*" children as overlays in WebXR AR.
-  // We position it at the bottom-centre of the model using data-surface.
-  const portionHotspot = document.createElement('button');
-  portionHotspot.slot             = 'hotspot-portion';
-  portionHotspot.dataset.position = '0 0 0';   // world-centre of model
-  portionHotspot.dataset.normal   = '0 1 0';   // faces upward
-  portionHotspot.className        = 'ar-hotspot-portion';
-  portionHotspot.textContent      = '🍽 Portion Preview';
-
-  // Hotspot style — injected once
-  if (!document.getElementById('ar-hotspot-style')) {
-    const st = document.createElement('style');
-    st.id = 'ar-hotspot-style';
-    st.textContent = `
-      .ar-hotspot-portion {
-        display: inline-flex; align-items: center; gap: 6px;
-        background: rgba(10,6,2,0.85);
-        color: #e8d080;
-        border: 1.5px solid rgba(196,160,48,0.6);
-        border-radius: 30px;
-        padding: 10px 22px;
-        font-family: 'Cinzel', serif;
-        font-size: 13px; font-weight: 600;
-        letter-spacing: 1.5px;
-        cursor: pointer;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.55);
-        white-space: nowrap;
-        transition: background 0.2s, color 0.2s, border-color 0.2s, transform 0.15s;
-        -webkit-tap-highlight-color: transparent;
-        min-height: 48px;
-      }
-      .ar-hotspot-portion:active  { transform: scale(0.95); }
-      .ar-hotspot-portion.snapped {
-        background: rgba(154,120,32,0.92);
-        color: #1c1108;
-        border-color: #c4a030;
-      }
-      /* Hide the default hotspot dot */
-      .ar-hotspot-portion::before { display: none !important; }
-    `;
-    document.head.appendChild(st);
-  }
-  mv.appendChild(portionHotspot);
-
-  // Insert model-viewer into DOM after all attributes + children are set
   vw.insertBefore(mv, arBadge);
 
-  // ── Portion scale logic ──
-  // Compute what uniform scale makes the model's longest axis == portionDiameterM
-  // We read getDimensions() (natural size in metres at scale=1) after load.
-  let portionScaleStr = null;   // computed on load
-  let isPortionActive = false;
-  let originalScale   = `${s} ${s} ${s}`;
+  // ── Portion Preview overlay button (top-right of viewer) ──
+  const ppBtn  = document.createElement('button');
+  ppBtn.className = 'pp-btn';
+  ppBtn.innerHTML = `🍽 Portion Preview`;
+  ppBtn.style.display = 'none'; // hidden until model loads
+  vw.appendChild(ppBtn);
 
+  // Info pill showing exact size
+  const ppInfo = document.createElement('div');
+  ppInfo.className = 'pp-info';
+  ppInfo.textContent = d.portionLabel || '~20 cm plate';
+  vw.appendChild(ppInfo);
+
+  const originalScale = `${s} ${s} ${s}`;
+  let isPortionActive = false;
+  let portionScaleStr = null;
+
+  // ── on load: compute portion scale, wire up button, show viewer ──
   mv.addEventListener('load', () => {
-    // Compute natural dimensions to calibrate portion scale
-    let portionScale = parseFloat(s); // fallback
+    // Compute scale so the model's longest axis = portionDiameterM
+    let pScale = parseFloat(s);
     if (mv.getDimensions) {
-      const dim = mv.getDimensions();  // { x, y, z } in metres at current scale
-      console.log(`[AR] ${d.name} dims at scale ${s}:`, dim);
-      // Longest axis of the model at current scale
-      const longestAtCurrentScale = Math.max(dim.x, dim.y, dim.z);
-      if (longestAtCurrentScale > 0) {
+      const dim = mv.getDimensions(); // metres at current applied scale
+      console.log(`[AR] ${d.name} dims @scale ${s}:`, dim);
+      const longest = Math.max(dim.x ?? 0, dim.y ?? 0, dim.z ?? 0);
+      if (longest > 0) {
         const targetM = d.portionDiameterM || 0.20;
-        // New scale = currentScale * (target / longestAtCurrentScale)
-        portionScale = parseFloat(s) * (targetM / longestAtCurrentScale);
-        portionScale = Math.max(0.001, portionScale);
+        pScale = parseFloat(s) * (targetM / longest);
+        pScale = Math.max(0.0001, pScale);
       }
     }
-    portionScaleStr = portionScale.toFixed(6);
-    console.log(`[AR] ${d.name} portion scale → ${portionScaleStr}  (${d.portionLabel})`);
+    portionScaleStr = pScale.toFixed(6);
+    console.log(`[AR] ${d.name} portionScale=${portionScaleStr} (${d.portionLabel})`);
 
-    // Wire up the hotspot button
-    portionHotspot.addEventListener('click', () => {
-      isPortionActive = !isPortionActive;
-      if (isPortionActive) {
-        // Snap to real portion size
-        mv.setAttribute('scale', `${portionScaleStr} ${portionScaleStr} ${portionScaleStr}`);
-        portionHotspot.classList.add('snapped');
-        portionHotspot.textContent = `✓ ${d.portionLabel}`;
-      } else {
-        // Restore original display scale
-        mv.setAttribute('scale', originalScale);
-        portionHotspot.classList.remove('snapped');
-        portionHotspot.textContent = '🍽 Portion Preview';
-      }
-    });
-
-    // Show model in the 3D preview panel
+    // Show viewer, show buttons
     photoWrap.style.display = 'none';
     mv.style.zIndex         = '2';
     mv.style.opacity        = '1';
@@ -1062,6 +1068,27 @@ function loadModelAndAR(d, vw, arBadge, scaleInfo, arBtnWrap, photoWrap) {
     arBtnWrap.style.display = 'flex';
     btn.disabled            = false;
     btn.innerHTML           = '✦ Launch AR';
+    ppBtn.style.display     = 'inline-flex';
+
+    // ── Portion Preview toggle ──
+    ppBtn.addEventListener('click', () => {
+      isPortionActive = !isPortionActive;
+      if (isPortionActive) {
+        mv.setAttribute('scale', `${portionScaleStr} ${portionScaleStr} ${portionScaleStr}`);
+        // Reset camera so the portion-sized model fills the view nicely
+        mv.setAttribute('camera-orbit', '0deg 75deg auto');
+        mv.setAttribute('field-of-view', 'auto');
+        ppBtn.classList.add('pp-active');
+        ppBtn.innerHTML    = `✓ Actual Size`;
+        ppInfo.classList.add('pp-info-visible');
+      } else {
+        mv.setAttribute('scale', originalScale);
+        mv.setAttribute('camera-orbit', '0deg 75deg auto');
+        ppBtn.classList.remove('pp-active');
+        ppBtn.innerHTML    = `🍽 Portion Preview`;
+        ppInfo.classList.remove('pp-info-visible');
+      }
+    });
 
     // Auto-launch AR
     mv.activateAR();
@@ -1070,11 +1097,14 @@ function loadModelAndAR(d, vw, arBadge, scaleInfo, arBtnWrap, photoWrap) {
       if (e.detail.status === 'failed' || e.detail.status === 'not-presenting') {
         btn.disabled  = false;
         btn.innerHTML = '✶ View in AR';
-        // Reset portion state when AR exits
-        isPortionActive = false;
-        portionHotspot.classList.remove('snapped');
-        portionHotspot.textContent = '🍽 Portion Preview';
-        mv.setAttribute('scale', originalScale);
+        // Reset when AR exits
+        if (isPortionActive) {
+          isPortionActive = false;
+          mv.setAttribute('scale', originalScale);
+          ppBtn.classList.remove('pp-active');
+          ppBtn.innerHTML = `🍽 Portion Preview`;
+          ppInfo.classList.remove('pp-info-visible');
+        }
       }
     }, { once: true });
   });
@@ -1082,6 +1112,8 @@ function loadModelAndAR(d, vw, arBadge, scaleInfo, arBtnWrap, photoWrap) {
   mv.addEventListener('error', () => {
     btn.disabled  = false;
     btn.innerHTML = '⚠ Retry';
+    ppBtn.remove();
+    ppInfo.remove();
     mv.remove();
   });
 }
@@ -1091,7 +1123,7 @@ function closeModal() {
   if (mvEl && typeof mvEl.pause === 'function') mvEl.pause();
   document.getElementById('modal-overlay').classList.remove('open');
   document.body.style.overflow = '';
-  document.querySelectorAll('#modal-viewer-wrap .modal-photo, #modal-viewer-wrap model-viewer, #modal-viewer-wrap .mv-loading-overlay, #modal-viewer-wrap .mv-ar-btn-wrap')
+  document.querySelectorAll('#modal-viewer-wrap .modal-photo, #modal-viewer-wrap model-viewer, #modal-viewer-wrap .mv-loading-overlay, #modal-viewer-wrap .mv-ar-btn-wrap, #modal-viewer-wrap .pp-btn, #modal-viewer-wrap .pp-info')
     .forEach(el => el.remove());
   document.getElementById('mv-ar-badge').classList.remove('visible');
 }
