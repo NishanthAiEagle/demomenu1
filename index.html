@@ -684,16 +684,16 @@ const DISH_IMAGES = {
 };
 
 const LOCAL_ASSETS = {
-  'agedashi tofu':    { folder: 'Agedashi-Tofu',    file: 'Agedashi-Tofu',    scale: 0.15, portionDiameterM: 0.16, portionLabel: '~16cm bowl' },
-  'edamame':          { folder: 'Edamame',           file: 'Edamame',          scale: 0.06, portionDiameterM: 0.18, portionLabel: '~18cm plate' },
-  'gyoza':            { folder: 'Gyoza',             file: 'Gyoza',            scale: 0.3,  portionDiameterM: 0.22, portionLabel: '~22cm plate, 6 pcs' },
-  'karaage':          { folder: 'Karaage',           file: 'Karaage',          scale: 0.15, portionDiameterM: 0.20, portionLabel: '~20cm plate' },
-  'matcha ice cream': { folder: 'Matcha-Ice-Cream',  file: 'Matcha-Ice-Cream', scale: 0.3,  portionDiameterM: 0.10, portionLabel: '~10cm cup' },
-  'miso soup':        { folder: 'Miso-Soup',         file: 'Miso-Soup',        scale: 0.3,  portionDiameterM: 0.12, portionLabel: '~12cm bowl' },
-  'ramen':            { folder: 'Ramen',             file: 'Ramen',            scale: 0.2,  portionDiameterM: 0.22, portionLabel: '~22cm bowl' },
-  'salmon sashimi':   { folder: 'Salmon-Sashimi',    file: 'Salmon-Sashimi',   scale: 0.3,  portionDiameterM: 0.24, portionLabel: '~24cm plate' },
-  'takoyaki':         { folder: 'Takoyaki',          file: 'Takoyaki',         scale: 0.5,  portionDiameterM: 0.20, portionLabel: '~20cm plate, 6 pcs' },
-  'tempura':          { folder: 'Tempura',           file: 'Tempura',          scale: 0.3,  portionDiameterM: 0.26, portionLabel: '~26cm plate' },
+  'agedashi tofu':    { folder: 'Agedashi-Tofu',    file: 'Agedashi-Tofu',    scale: 0.15 },
+  'edamame':          { folder: 'Edamame',           file: 'Edamame',          scale: 0.06 },
+  'gyoza':            { folder: 'Gyoza',             file: 'Gyoza',            scale: 0.3  },
+  'karaage':          { folder: 'Karaage',           file: 'Karaage',          scale: 0.15 },
+  'matcha ice cream': { folder: 'Matcha-Ice-Cream',  file: 'Matcha-Ice-Cream', scale: 0.3  },
+  'miso soup':        { folder: 'Miso-Soup',         file: 'Miso-Soup',        scale: 0.3  },
+  'ramen':            { folder: 'Ramen',             file: 'Ramen',            scale: 0.2  },
+  'salmon sashimi':   { folder: 'Salmon-Sashimi',    file: 'Salmon-Sashimi',   scale: 0.3  },
+  'takoyaki':         { folder: 'Takoyaki',          file: 'Takoyaki',         scale: 0.5  },
+  'tempura':          { folder: 'Tempura',           file: 'Tempura',          scale: 0.3  },
 };
 const ASSETS_BASE = '3d-model';
 
@@ -703,12 +703,10 @@ function getLocalAssets(dishName) {
   if (!entry) return { posterPath: DISH_IMAGES[key] || '', glbPath: '' };
   const base = `${ASSETS_BASE}/${entry.folder}/${entry.file}`;
   return {
-    posterPath:        DISH_IMAGES[key] || `${base}.png`,
-    glbPath:           `${base}.glb`,
-    usdzPath:          `${base}.usdz`,
-    scale:             entry.scale,
-    portionDiameterM:  entry.portionDiameterM ?? 0.20,
-    portionLabel:      entry.portionLabel      ?? '~20cm plate',
+    posterPath: DISH_IMAGES[key] || `${base}.png`,
+    glbPath:    `${base}.glb`,
+    usdzPath:   `${base}.usdz`,
+    scale:      entry.scale,
   };
 }
 
@@ -789,12 +787,10 @@ function rowToDish(row) {
     dotd:      truthy(row['dish of the day'] || row['dotd']),
     isNew:     truthy(row['new']),
     available: truthy(row['available']),
-    glbPath:           local.glbPath,
-    usdzPath:          local.usdzPath,
-    posterPath:        local.posterPath,
-    scale:             local.scale,
-    portionDiameterM:  local.portionDiameterM,
-    portionLabel:      local.portionLabel,
+    glbPath:   local.glbPath,
+    usdzPath:  local.usdzPath,
+    posterPath: local.posterPath,
+    scale:     local.scale,
     emoji:     EMOJI_MAP[(row['name']||'').toLowerCase()] || '🍽️',
   };
 }
@@ -911,8 +907,7 @@ function openModal(id) {
   if (d.glbPath) {
     const arBtnWrap = document.createElement('div');
     arBtnWrap.className = 'mv-ar-btn-wrap';
-    arBtnWrap.style.cssText = `position:absolute;bottom:16px;left:50%;transform:translateX(-50%);z-index:6;display:flex;gap:8px;align-items:center;`;
-
+    arBtnWrap.style.cssText = `position:absolute;bottom:16px;left:50%;transform:translateX(-50%);z-index:6;display:flex;gap:10px;align-items:center;`;
     arBtnWrap.innerHTML = `
       <button class="modal-ar-launch-btn" style="
         display:inline-flex;align-items:center;gap:8px;
@@ -924,7 +919,6 @@ function openModal(id) {
         ✦ View On Table
       </button>`;
     vw.insertBefore(arBtnWrap, arBadge);
-
     arBtnWrap.querySelector('.modal-ar-launch-btn').addEventListener('click', () => {
       loadModelAndAR(d, vw, arBadge, scaleInfo, arBtnWrap, photoWrap);
     });
@@ -939,107 +933,22 @@ function loadModelAndAR(d, vw, arBadge, scaleInfo, arBtnWrap, photoWrap) {
   btn.disabled = true;
   btn.innerHTML = `<span style="display:inline-block;width:14px;height:14px;border:2px solid rgba(245,237,224,0.3);border-top-color:var(--washi);border-radius:50%;animation:spin 0.8s linear infinite;"></span> 読込中…`;
 
-  // ── Inject AR overlay styles once ──
-  if (!document.getElementById('ar-overlay-style')) {
-    const st = document.createElement('style');
-    st.id = 'ar-overlay-style';
-    st.textContent = `
-      /* This div fills the AR screen and holds our overlay UI */
-      .ar-overlay-wrap {
-        position: fixed;
-        inset: 0;
-        pointer-events: none;
-        z-index: 9999;
-        display: none;
-      }
-      .ar-overlay-wrap.ar-active { display: block; }
-
-      /* Portion Preview button — top-right of AR camera screen */
-      .pp-ar-btn {
-        position: absolute;
-        top: max(env(safe-area-inset-top, 0px) + 16px, 20px);
-        right: 16px;
-        pointer-events: auto;
-        display: inline-flex; align-items: center; gap: 8px;
-        background: rgba(10,6,2,0.88);
-        color: #e8d080;
-        border: 1.5px solid rgba(196,160,48,0.7);
-        border-radius: 50px;
-        padding: 12px 22px;
-        font-family: 'Cinzel', serif;
-        font-size: 13px; font-weight: 600;
-        letter-spacing: 1.5px;
-        cursor: pointer;
-        box-shadow: 0 4px 24px rgba(0,0,0,0.6);
-        white-space: nowrap;
-        -webkit-tap-highlight-color: transparent;
-        min-height: 52px; min-width: 52px;
-        transition: background 0.2s, color 0.2s, border-color 0.2s;
-      }
-      .pp-ar-btn.pp-active {
-        background: rgba(154,120,32,0.95);
-        color: #1c1108;
-        border-color: #e8c840;
-      }
-      .pp-ar-btn:active { transform: scale(0.95); }
-
-      /* Size info pill — appears below the button when active */
-      .pp-ar-info {
-        position: absolute;
-        top: max(env(safe-area-inset-top, 0px) + 80px, 84px);
-        right: 16px;
-        pointer-events: none;
-        background: rgba(10,6,2,0.82);
-        border: 1px solid rgba(196,160,48,0.4);
-        border-radius: 50px;
-        padding: 7px 18px;
-        font-family: 'Noto Sans JP', sans-serif;
-        font-size: 12px; letter-spacing: 1px;
-        color: #e8d080;
-        white-space: nowrap;
-        opacity: 0;
-        transform: translateY(-6px);
-        transition: opacity 0.25s, transform 0.25s;
-      }
-      .pp-ar-info.pp-info-show {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    `;
-    document.head.appendChild(st);
-  }
-
-  // ── Create the fixed AR overlay div (appended to body so it sits over the camera) ──
-  const arOverlay = document.createElement('div');
-  arOverlay.className = 'ar-overlay-wrap';
-
-  const ppArBtn = document.createElement('button');
-  ppArBtn.className = 'pp-ar-btn';
-  ppArBtn.innerHTML = `🍽 Portion Preview`;
-
-  const ppArInfo = document.createElement('div');
-  ppArInfo.className = 'pp-ar-info';
-  ppArInfo.textContent = d.portionLabel || '~20cm plate';
-
-  arOverlay.appendChild(ppArBtn);
-  arOverlay.appendChild(ppArInfo);
-  document.body.appendChild(arOverlay);
-
-  // ── Build model-viewer ──
   const mv = document.createElement('model-viewer');
   mv.setAttribute('src', d.glbPath);
   if (isIOS && d.usdzPath) mv.setAttribute('ios-src', d.usdzPath);
 
+  // Scale: applied in 3D preview only. AR uses ar-scale="auto" so Scene Viewer
+  // / WebXR auto-fits the model to real-world size from GLTF units — fastest & most accurate.
   const s = (d.scale ?? 1).toFixed(6);
   mv.setAttribute('scale',             `${s} ${s} ${s}`);
   mv.setAttribute('ar',               '');
   mv.setAttribute('ar-modes',         'webxr scene-viewer quick-look');
   mv.setAttribute('ar-placement',     'floor');
-  mv.setAttribute('ar-scale',         'fixed');
+  mv.setAttribute('ar-scale',         'auto');          // auto-fit to environment
   mv.setAttribute('camera-controls',  '');
   mv.setAttribute('camera-orbit',     '0deg 75deg auto');
-  mv.setAttribute('min-camera-orbit', 'auto 10deg 0.05m');
-  mv.setAttribute('max-camera-orbit', 'auto 90deg 12m');
+  mv.setAttribute('min-camera-orbit', 'auto 10deg 0.1m');
+  mv.setAttribute('max-camera-orbit', 'auto 90deg 10m');
   mv.setAttribute('field-of-view',    'auto');
   mv.setAttribute('shadow-intensity', '1');
   mv.setAttribute('shadow-softness',  '0.8');
@@ -1048,89 +957,43 @@ function loadModelAndAR(d, vw, arBadge, scaleInfo, arBtnWrap, photoWrap) {
   mv.setAttribute('interaction-prompt','none');
   mv.setAttribute('loading',          'eager');
   mv.setAttribute('reveal',           'auto');
+  mv.setAttribute('touch-action',     'pan-y');          // allow pinch-zoom on model
   mv.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;background:transparent;touch-action:pan-y pinch-zoom;z-index:-1;opacity:0;pointer-events:none;';
 
+  // Insert into DOM AFTER all attributes are set (Scene Viewer reads scale from launch URL)
   vw.insertBefore(mv, arBadge);
 
-  const originalScale = `${s} ${s} ${s}`;
-  let isPortionActive = false;
-  let portionScaleStr = null;
-
-  // ── on load: compute portion scale, wire button, launch AR ──
   mv.addEventListener('load', () => {
-    // Compute scale that makes longest axis = portionDiameterM
-    let pScale = parseFloat(s);
+    // Log natural dimensions so you can calibrate LOCAL_ASSETS scale values
     if (mv.getDimensions) {
       const dim = mv.getDimensions();
-      console.log(`[AR] ${d.name} dims @scale ${s}:`, dim);
-      const longest = Math.max(dim.x ?? 0, dim.y ?? 0, dim.z ?? 0);
-      if (longest > 0) {
-        const targetM = d.portionDiameterM || 0.20;
-        pScale = parseFloat(s) * (targetM / longest);
-        pScale = Math.max(0.0001, pScale);
-      }
+      console.log(`[AR] ${d.name} natural dims:`, dim, `| applied scale: ${s}`);
     }
-    portionScaleStr = pScale.toFixed(6);
-    console.log(`[AR] ${d.name} portionScale=${portionScaleStr} (${d.portionLabel})`);
 
-    // Show 3D model in the modal viewer panel
+    // Show the 3D model in the viewer panel (interactive with pinch-zoom)
     photoWrap.style.display = 'none';
-    mv.style.zIndex         = '2';
-    mv.style.opacity        = '1';
-    mv.style.pointerEvents  = 'auto';
+    mv.style.zIndex = '2';
+    mv.style.opacity = '1';
+    mv.style.pointerEvents = 'auto';
     arBadge.classList.add('visible');
     arBtnWrap.style.display = 'flex';
-    btn.disabled            = false;
-    btn.innerHTML           = '✦ Launch AR';
+    btn.disabled = false;
+    btn.innerHTML = '✦ Launch AR';
 
-    // ── Portion Preview toggle (wired to the AR overlay button) ──
-    ppArBtn.addEventListener('click', () => {
-      isPortionActive = !isPortionActive;
-      if (isPortionActive) {
-        mv.setAttribute('scale', `${portionScaleStr} ${portionScaleStr} ${portionScaleStr}`);
-        ppArBtn.classList.add('pp-active');
-        ppArBtn.innerHTML = `✓ Actual Size`;
-        ppArInfo.classList.add('pp-info-show');
-      } else {
-        mv.setAttribute('scale', originalScale);
-        ppArBtn.classList.remove('pp-active');
-        ppArBtn.innerHTML = `🍽 Portion Preview`;
-        ppArInfo.classList.remove('pp-info-show');
-      }
-    });
-
-    // ── Show/hide the AR overlay based on AR session state ──
-    mv.addEventListener('ar-status', (e) => {
-      const status = e.detail.status;
-
-      if (status === 'presenting') {
-        // AR camera is now live — show our overlay
-        arOverlay.classList.add('ar-active');
-      }
-
-      if (status === 'not-presenting' || status === 'failed') {
-        // AR exited — hide overlay and reset state
-        arOverlay.classList.remove('ar-active');
-        btn.disabled  = false;
-        btn.innerHTML = '✶ View in AR';
-        if (isPortionActive) {
-          isPortionActive = false;
-          mv.setAttribute('scale', originalScale);
-          ppArBtn.classList.remove('pp-active');
-          ppArBtn.innerHTML = `🍽 Portion Preview`;
-          ppArInfo.classList.remove('pp-info-show');
-        }
-      }
-    });
-
-    // Auto-launch AR
+    // Auto-launch AR immediately
     mv.activateAR();
+
+    mv.addEventListener('ar-status', (e) => {
+      if (e.detail.status === 'failed' || e.detail.status === 'not-presenting') {
+        btn.disabled = false;
+        btn.innerHTML = '✶ View in AR';
+      }
+    }, { once: true });
   });
 
   mv.addEventListener('error', () => {
-    btn.disabled  = false;
+    btn.disabled = false;
     btn.innerHTML = '⚠ Retry';
-    arOverlay.remove();
     mv.remove();
   });
 }
@@ -1140,10 +1003,8 @@ function closeModal() {
   if (mvEl && typeof mvEl.pause === 'function') mvEl.pause();
   document.getElementById('modal-overlay').classList.remove('open');
   document.body.style.overflow = '';
-  document.querySelectorAll('#modal-viewer-wrap .modal-photo, #modal-viewer-wrap model-viewer, #modal-viewer-wrap .mv-loading-overlay, #modal-viewer-wrap .mv-ar-btn-wrap, #modal-viewer-wrap .pp-btn, #modal-viewer-wrap .pp-info')
+  document.querySelectorAll('#modal-viewer-wrap .modal-photo, #modal-viewer-wrap model-viewer, #modal-viewer-wrap .mv-loading-overlay, #modal-viewer-wrap .mv-ar-btn-wrap')
     .forEach(el => el.remove());
-  // Remove AR overlay from body if it exists
-  document.querySelectorAll('.ar-overlay-wrap').forEach(el => el.remove());
   document.getElementById('mv-ar-badge').classList.remove('visible');
 }
 
